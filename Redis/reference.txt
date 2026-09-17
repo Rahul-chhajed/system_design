@@ -1,0 +1,183 @@
+Redis is open source, in memory data store
+
+** problem solved:- **
+1) Requery
+2) Response Time
+
+** start **
+docker run -d --name redis -p 6379:6379 redis:<version>
+
+use
+$ docker exec -it redis redis-cli
+
+
+=> ** now in cli you can write commands** 
+
+** strings **
+$ set <entity>:<id> key
+
+$ get <entity>:<id>
+=> key
+
+you can set expirey also
+$ set <entity>:<id> key EX 60
+
+or EXPIREY <entity>:<id> 60
+
+//stacks and queue
+ ** queue **
+> LPUSH bikes:repairs bike:1
+(integer) 1
+> LPUSH bikes:repairs bike:2
+(integer) 2
+> RPOP bikes:repairs
+"bike:1"
+> RPOP bikes:repairs
+"bike:2"
+
+** stack **
+> LPUSH bikes:repairs bike:1
+(integer) 1
+> LPUSH bikes:repairs bike:2
+(integer) 2
+> LPOP bikes:repairs
+"bike:2"
+> LPOP bikes:repairs
+"bike:1"
+
+<b>Blocking operations on lists</b>
+
+So Redis implements commands called BRPOP and BLPOP which are versions of RPOP and LPOP able to block if the list is empty: they'll return to the caller only when a new element is added to the list, or when a user-specified timeout is reached.
+
+** READ THE LIST **
+$ lrange messages 0 3
+$ lrange message 0 -1
+
+<b> delete command</b>
+$ del key
+
+** REDIS SETS **
+A Redis set is an unordered collection of unique strings (members). You can use Redis sets to efficiently:
+
+Track unique items (e.g., track all unique IP addresses accessing a given blog post).
+Represent relations (e.g., the set of all users with a given role).
+Perform common set operations such as intersection, unions, and differences.
+
+$ SADD bikes:racing:france bike:1
+(integer) 1
+
+$ SADD bikes:racing:france bike:1
+(integer) 0
+
+** redis hashes **
+in nodejs
+const res1 = await client.hSet(
+  'bike:1',
+  {
+    'model': 'Deimos',
+    'brand': 'Ergonom',
+    'type': 'Enduro bikes',
+    'price': 4972,
+  }
+)
+console.log(res1) // 4
+
+const res2 = await client.hGet('bike:1', 'model')
+console.log(res2)  // 'Deimos'
+
+const res3 = await client.hGet('bike:1', 'price')
+console.log(res3)  // '4972'
+
+const res4 = await client.hGetAll('bike:1')
+console.log(res4)  
+/*
+{
+  brand: 'Ergonom',
+  model: 'Deimos',
+  price: '4972',
+  type: 'Enduro bikes'
+}
+*/
+
+** in cli **
+> HSET bike:1 model Deimos brand Ergonom type 'Enduro bikes' price 4972
+(integer) 4
+> HGET bike:1 model
+"Deimos"
+> HGET bike:1 price
+"4972"
+> HGETALL bike:1
+1) "model"
+2) "Deimos"
+3) "brand"
+4) "Ergonom"
+5) "type"
+6) "Enduro bikes"
+7) "price"
+8) "4972"
+
+
+** Redis Streams **
+
+A Redis stream is a data structure that acts like an append-only log but also implements several operations to overcome some of the limits of a typical append-only log. These include random access in O(1) time and complex consumption strategies, such as consumer groups. You can use streams to record and simultaneously syndicate events in real time. Examples of Redis stream use cases include:
+
+Event sourcing (e.g., tracking user actions, clicks, etc.)
+Sensor monitoring (e.g., readings from devices in the field)
+Notifications (e.g., storing a record of each user's notifications in a separate stream)
+
+** node js **
+
+const res1 = await client.xAdd(
+  'race:france', '*', {
+    'rider': 'Castilla',
+    'speed': '30.2',
+    'position': '1',
+    'location_id': '1'
+  }
+);
+console.log(res1);
+
+
+** cli **
+
+> XADD race:france * rider Castilla speed 30.2 position 1 location_id 1
+"1692632086370-0"
+> XADD race:france * rider Norem speed 28.8 position 3 location_id 1
+"1692632094485-0"
+> XADD race:france * rider Prickett speed 29.7 position 2 location_id 1
+"1692632102976-0"
+
+
+
+** Redis geospatial **
+
+Redis geospatial indexes let you store coordinates and search for them. This data structure is useful for finding nearby points within a given radius or bounding box.
+
+Suppose you're building a mobile app that lets you find all of the bike rental stations closest to your current location.
+
+Add several locations to a geospatial index:
+
+> GEOADD bikes:rentable -122.27652 37.805186 station:1
+(integer) 1
+> GEOADD bikes:rentable -122.2674626 37.8062344 station:2
+(integer) 1
+> GEOADD bikes:rentable -122.2469854 37.8104049 station:3
+(integer) 1
+
+
+Find all locations within a 5 kilometer radius of a given location, and return the distance to each location:
+
+
+> GEOSEARCH bikes:rentable FROMLONLAT -122.2612767 37.7936847 BYRADIUS 5 km WITHDIST
+1) 1) "station:1"
+   2) "1.8523"
+2) 1) "station:2"
+   2) "1.4979"
+3) 1) "station:3"
+   2) "2.2441"
+
+
+------------------------------------------------------------------------------end ----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
